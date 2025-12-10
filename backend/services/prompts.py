@@ -204,7 +204,7 @@ def get_page_description_prompt(project_context: 'ProjectContext', outline: list
 - 适应而非改造：通过观察学习自然，发展生存技能
 - 影响特点：局部、短期、低强度，生态可自我恢复
 
-其他页面素材（如果有请加上，包括markdown图片链接等）
+其他页面素材（如果有请积极添加，包括markdown图片链接、公式、表格等）
 
 【关于图片】如果参考文件中包含以 /files/ 开头的本地文件URL图片（例如 /files/mineru/xxx/image.png），请将这些图片以markdown格式输出，例如：![图片描述](/files/mineru/xxx/image.png)。这些图片会被包含在PPT页面中。
 
