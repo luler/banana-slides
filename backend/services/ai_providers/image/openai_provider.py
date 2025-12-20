@@ -123,7 +123,26 @@ class OpenAIImageProvider(ImageProvider):
                         image = Image.open(BytesIO(image_data))
                         logger.debug(f"Successfully extracted image: {image.size}, {image.mode}")
                         return image
-            
+            # ===== 新增：处理 message.images 格式 =====
+            if hasattr(message, 'images') and message.images:
+                logger.debug(f"Found images array with {len(message.images)} image(s)")
+                for img_part in message.images:
+                    # 统一提取 URL（兼容 dict 和 object 格式）
+                    url = None
+                    if isinstance(img_part, dict):
+                        url = img_part.get('image_url', {}).get('url', '')
+                    elif hasattr(img_part, 'image_url'):
+                        image_url_obj = img_part.image_url
+                        url = image_url_obj.get('url', '') if isinstance(image_url_obj, dict) else getattr(
+                            image_url_obj, 'url', '')
+
+                    # 统一处理 URL
+                    if url and url.startswith('data:image'):
+                        base64_data = url.split(',', 1)[1]
+                        image_data = base64.b64decode(base64_data)
+                        image = Image.open(BytesIO(image_data))
+                        logger.debug(f"Successfully extracted image from images array: {image.size}, {image.mode}")
+                        return image
             # Try standard OpenAI content format (list of content parts)
             if hasattr(message, 'content') and message.content:
                 # If content is a list (multimodal response)
