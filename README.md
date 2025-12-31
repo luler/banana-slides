@@ -111,6 +111,16 @@
 <img width="1000" alt="image" src="https://github.com/user-attachments/assets/3e54bbba-88be-4f69-90a1-02e875c25420" />
 <img width="1748" height="538" alt="PPT与PDF导出" src="https://github.com/user-attachments/assets/647eb9b1-d0b6-42cb-a898-378ebe06c984" />
 
+### 5. 可编辑组件pptx导出（Beta迭代中）
+- **智能递归进行组件分析提取、文字提取、表格提取，最终得到可手动编辑的pptx**
+<img width="1000"  alt="image" src="https://github.com/user-attachments/assets/a85d2d48-1966-4800-a4bf-73d17f914062" />
+
+
+## 🔥 近期更新
+- 【12-27】: 加入了对无图片模板模式的支持和较高质量的文字预设，现在可以通过纯文字描述的方式来控制ppt页面风格
+- 【12-25】: https://github.com/Anionex/banana-slides/pull/82 支持了基于版面识别、局部重绘和递归分析的可编辑pptx导出方法，开发者可切换至该分支提前尝鲜⛱️
+- 【12-24】: main分支加入了基于nano-banana-pro背景提取的可编辑pptx导出方法（目前Beta）
+
 
 ## 🗺️ 开发计划
 
@@ -163,10 +173,10 @@ cp .env.example .env
 编辑 `.env` 文件，配置必要的环境变量：
 > **项目中大模型接口以AIHubMix平台格式为标准，推荐使用 [AIHubMix](https://aihubmix.com/?aff=17EC) 获取API密钥，减小迁移成本**  
 ```env
-# AI Provider格式配置 (gemini / openai)
+# AI Provider格式配置 (gemini / openai / vertex)
 AI_PROVIDER_FORMAT=gemini
 
-# Gemini 格式配置（当 AI_PROVIDER_FORMAT=gemini时使用）
+# Gemini 格式配置（当 AI_PROVIDER_FORMAT=gemini 时使用）
 GOOGLE_API_KEY=your-api-key-here
 GOOGLE_API_BASE=https://generativelanguage.googleapis.com
 # 代理示例: https://aihubmix.com/gemini
@@ -175,8 +185,39 @@ GOOGLE_API_BASE=https://generativelanguage.googleapis.com
 OPENAI_API_KEY=your-api-key-here
 OPENAI_API_BASE=https://api.openai.com/v1
 # 代理示例: https://aihubmix.com/v1
+
+# Vertex AI 格式配置（当 AI_PROVIDER_FORMAT=vertex 时使用）
+# 需要 GCP 服务账户，可使用 GCP 免费额度
+# VERTEX_PROJECT_ID=your-gcp-project-id
+# VERTEX_LOCATION=global
+# GOOGLE_APPLICATION_CREDENTIALS=./gcp-service-account.json
 ...
 ```
+
+<details>
+  <summary>📒 使用 Vertex AI（GCP 免费额度）</summary>
+
+如果你想使用 Google Cloud Vertex AI（可使用 GCP 新用户赠金），需要额外配置：
+
+1. 在 [GCP Console](https://console.cloud.google.com/) 创建服务账户并下载 JSON 密钥文件
+2. 将密钥文件重命名为 `gcp-service-account.json` 放在项目根目录
+3. 编辑 `.env` 文件：
+   ```env
+   AI_PROVIDER_FORMAT=vertex
+   VERTEX_PROJECT_ID=your-gcp-project-id
+   VERTEX_LOCATION=global
+   ```
+4. 编辑 `docker-compose.yml`，取消以下注释：
+   ```yaml
+   # environment:
+   #   - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-service-account.json
+   # ...
+   # - ./gcp-service-account.json:/app/gcp-service-account.json:ro
+   ```
+
+> **注意**：`gemini-3-*` 系列模型需要设置 `VERTEX_LOCATION=global`
+
+</details>
 
 2. **启动服务**
 
@@ -271,10 +312,10 @@ cp .env.example .env
 编辑 `.env` 文件，配置你的 API 密钥：
 > **项目中大模型接口以AIHubMix平台格式为标准，推荐使用 [AIHubMix](https://aihubmix.com/?aff=17EC) 获取API密钥，减小迁移成本** 
 ```env
-# AI Provider格式配置 (gemini / openai)
+# AI Provider格式配置 (gemini / openai / vertex)
 AI_PROVIDER_FORMAT=gemini
 
-# Gemini 格式配置（当 AI_PROVIDER_FORMAT=gemini时使用）
+# Gemini 格式配置（当 AI_PROVIDER_FORMAT=gemini 时使用）
 GOOGLE_API_KEY=your-api-key-here
 GOOGLE_API_BASE=https://generativelanguage.googleapis.com
 # 代理示例: https://aihubmix.com/gemini
@@ -283,6 +324,13 @@ GOOGLE_API_BASE=https://generativelanguage.googleapis.com
 OPENAI_API_KEY=your-api-key-here
 OPENAI_API_BASE=https://api.openai.com/v1
 # 代理示例: https://aihubmix.com/v1
+
+# Vertex AI 格式配置（当 AI_PROVIDER_FORMAT=vertex 时使用）
+# 需要 GCP 服务账户，可使用 GCP 免费额度
+# VERTEX_PROJECT_ID=your-gcp-project-id
+# VERTEX_LOCATION=global
+# GOOGLE_APPLICATION_CREDENTIALS=./gcp-service-account.json
+
 PORT=5000
 ...
 ```
@@ -454,12 +502,13 @@ banana-slides/
 
 欢迎提出新功能建议或反馈，本人也会~~佛系~~回答大家问题
 
-<img width="300"  alt="image" src="https://github.com/user-attachments/assets/0d4eb8cd-2c95-4f1c-aca2-2a656e6601a4" />
+<img width="300" alt="image" src="https://github.com/user-attachments/assets/b37b6144-5152-4f30-9b90-0c0678374437" />
+
 
 **常见问题**
 1.  **支持免费层级的 Gemini API Key 吗？**
     *   免费层级只支持文本生成，不支持图片生成。
-2.  **生成内容时提示 503 错误**
+2.  **生成内容时提示 503 错误或 Retry Error**
     *   可以根据 README 中的命令查看 Docker 内部日志，定位 503 问题的详细报错，一般是模型配置不正确导致。
 3.  **.env 中设置了 API Key 之后，为什么不生效？**
     1.  运行时编辑.env需要重启 Docker 容器以应用更改。
@@ -531,11 +580,9 @@ banana-slides/
 
 <img width="240" alt="image" src="https://github.com/user-attachments/assets/fd7a286d-711b-445e-aecf-43e3fe356473" />
 
-- 感谢以下朋友对项目的无偿赞助支持：
-> - 来自 @azazo1 的 ￥50
-> - 来自 @🍟 的 ￥20
-> - 来自 @苍何 的 ￥10
-- 如对赞助列表有疑问（如赞赏后没看到您的名字），欢迎<a href="mailto:anionex@qq.com">联系作者</a>
+感谢以下朋友对项目的无偿赞助支持：
+> @雅俗共赏、@曹峥、@以年观日、@John、@azazo1、@刘聪NLP、@🍟、@苍何、@biubiu  
+> 如对赞助列表有疑问（如赞赏后没看到您的名字），可<a href="mailto:anionex@qq.com">联系作者</a>
  
 ## 📈 项目统计
 

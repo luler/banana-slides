@@ -289,7 +289,7 @@ test.describe('UI-driven E2E test: From user interface to PPT export', () => {
     if (!clickSucceeded || urlAfterFirstAttempt === urlBeforeClick) {
       console.log('  Navigation did not start, using JavaScript to trigger navigation...')
       // Extract project ID from current URL
-      const match = urlBeforeClick.match(/\/project\/([^\/]+)\//)
+      const match = urlBeforeClick.match(/\/project\/([^/]+)\//)
       if (match) {
         const projectId = match[1]
         const targetUrl = `http://localhost:3000/project/${projectId}/preview`
@@ -306,9 +306,101 @@ test.describe('UI-driven E2E test: From user interface to PPT export', () => {
     console.log('✓ Successfully navigated to preview page\n')
     
     // ====================================
-    // Step 11: Click batch generate images button
+    // Step 11: Select template (required before generating images)
     // ====================================
-    console.log('🎨 Step 11: Clicking batch generate images button...')
+    console.log('🎨 Step 11: Selecting template...')
+    
+    // Click "更换模板" button to open template selection modal
+    // The button might be hidden on small screens, so try multiple selectors
+    const changeTemplateBtn = page.locator('button:has-text("更换模板"), button[title="更换模板"]').first()
+    await changeTemplateBtn.waitFor({ state: 'visible', timeout: 10000 })
+    await changeTemplateBtn.scrollIntoViewIfNeeded()
+    await changeTemplateBtn.click()
+    console.log('✓ Clicked "更换模板" button, opening template selection modal...')
+    
+    // Wait for template modal to open (check for modal title and preset templates section)
+    await page.waitForSelector('text="更换模板"', { timeout: 5000 })
+    await page.waitForSelector('text="预设模板"', { timeout: 5000 })
+    await page.waitForTimeout(500) // Wait for modal animation
+    
+    // Select the first preset template 
+    let templateSelected = false
+    
+    
+    // Click the first preset template card in the grid (if name click didn't work)
+    if (!templateSelected) {
+      try {
+        // Find the preset templates section and click the first template card
+        // The preset templates are in a grid with class containing "aspect-[4/3]"
+        const presetSection = page.locator('h4:has-text("预设模板")').locator('..')
+        const firstTemplateCard = presetSection.locator('div[class*="aspect-[4/3]"]').first()
+        await firstTemplateCard.waitFor({ state: 'visible', timeout: 3000 })
+        await firstTemplateCard.click()
+        templateSelected = true
+        console.log('✓ Selected first preset template by clicking first card')
+      } catch (e) {
+        console.log('  Warning: Could not select template by card, trying alternative...')
+      }
+    }
+    
+    if (!templateSelected) {
+      throw new Error('Failed to select preset template')
+    }
+    
+    // Wait for template selection to complete dynamically
+    // The handleTemplateSelect function will:
+    // 1. Show "正在上传模板..." (isUploadingTemplate = true)
+    // 2. Upload template and sync project
+    // 3. Close modal (setIsTemplateModalOpen(false))
+    // 4. Show success toast "模板更换成功"
+    
+    console.log('  Waiting for template upload to complete...')
+    
+    // Wait for "正在上传模板..." to appear (indicates upload started)
+    const uploadingText = page.locator('text="正在上传模板..."')
+    const uploadStarted = await uploadingText.isVisible({ timeout: 3000 }).catch(() => false)
+    if (uploadStarted) {
+      console.log('  Template upload started, waiting for completion...')
+    }
+    
+    // Wait for modal to close (most reliable indicator that selection is complete)
+    // Modal component returns null when isOpen=false, so the modal DOM disappears
+    // We check for the modal's unique content that only exists when modal is open
+    await expect(async () => {
+      // Check if modal backdrop or modal content is still visible
+      // The modal has a backdrop with class "fixed inset-0 bg-black/50"
+      // and the modal content has title "更换模板" in a specific structure
+      const modalBackdrop = page.locator('.fixed.inset-0.bg-black\\/50').first()
+      const modalContent = page.locator('h2:has-text("更换模板")').first()
+      
+      const isBackdropVisible = await modalBackdrop.isVisible().catch(() => false)
+      const isContentVisible = await modalContent.isVisible().catch(() => false)
+      
+      if (isBackdropVisible || isContentVisible) {
+        throw new Error('Template selection modal still open')
+      }
+      return true
+    }).toPass({ 
+      timeout: 30000, // Wait up to 30 seconds for upload and modal close
+      intervals: [1000, 2000, 3000] // Check every 1-3 seconds
+    })
+    
+    console.log('✓ Template upload completed and modal closed')
+    
+    // Optionally wait for success toast (non-blocking, just for verification)
+    try {
+      await page.waitForSelector('text="模板更换成功"', { timeout: 3000 })
+      console.log('✓ Success toast appeared')
+    } catch (e) {
+      // Toast might have disappeared quickly, that's okay
+    }
+    
+    console.log('✓ Template selected successfully\n')
+    
+    // ====================================
+    // Step 12: Click batch generate images button
+    // ====================================
+    console.log('🎨 Step 12: Clicking batch generate images button...')
     
     // Wait for image generation page to load (button text includes page count like "批量生成图片 (3)")
     const generateImageBtn = page.locator('button').filter({ hasText: '批量生成图片' })
@@ -318,24 +410,100 @@ test.describe('UI-driven E2E test: From user interface to PPT export', () => {
       await generateImageBtn.first().click()
       console.log('✓ Clicked batch generate images button\n')
       
-      // Wait for images to generate (may take 3-8 minutes)
-      console.log('⏳ Step 12: Waiting for images to generate (may take 3-8 minutes)...')
+      // Wait for images to generate (should complete within 5 minutes)
+      console.log('⏳ Step 13: Waiting for images to generate (should complete within 5 minutes)...')
       
-      // Smart wait: Wait for export button to be enabled, which indicates all images are generated
-      // This is more reliable than checking individual image elements
-      const exportBtnCheck = page.locator('button:has-text("导出")')
-      await expect(exportBtnCheck).toBeEnabled({ timeout: 480000 })
-      
-      // Also verify that images are actually visible in the UI
-      await expect(async () => {
-        // Check for images in the preview area
-        const images = page.locator('img[src*="generated"], img[src*="image"]')
-        const count = await images.count()
-        if (count === 0) {
-          throw new Error('Images not yet visible in UI')
+      // Get expected page count from the button text (e.g., "批量生成图片 (3)")
+      let pageCount = 3 // default
+      try {
+        const buttonText = await generateImageBtn.first().textContent()
+        const match = buttonText?.match(/\((\d+)\)/)
+        if (match) {
+          pageCount = parseInt(match[1], 10)
         }
-        expect(count).toBeGreaterThan(0)
-      }).toPass({ timeout: 10000, intervals: [1000, 2000] })
+      } catch (e) {
+        // Fallback: try to count page thumbnails or cards
+        const thumbnails = page.locator('[data-page-index], .page-thumbnail, .slide-thumbnail')
+        const thumbnailCount = await thumbnails.count()
+        if (thumbnailCount > 0) {
+          pageCount = thumbnailCount
+        }
+      }
+      console.log(`  Expected ${pageCount} pages to generate images`)
+      
+      // Improved wait strategy: Check both loading state and export button
+      // Use 7 minutes timeout (420000ms) to give buffer beyond 5 minutes
+      const startTime = Date.now()
+      const maxWaitTime = 420000 // 7 minutes
+      const pollInterval = 2000 // Check every 2 seconds (matching frontend polling)
+      
+      // Step 1: Wait for global loading to disappear (task completed)
+      console.log('  Step 13a: Waiting for image generation task to complete...')
+      await expect(async () => {
+        // Check if fullscreen loading is gone (indicates task completed)
+        const loadingOverlay = page.locator('text="生成图片中..."')
+        const isLoading = await loadingOverlay.isVisible().catch(() => false)
+        
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        if (isLoading && elapsed % 10 === 0 && elapsed > 0) {
+          console.log(`  [${elapsed}s] Still generating images...`)
+        }
+        
+        if (isLoading) {
+          throw new Error(`Image generation still in progress (${elapsed}s elapsed)`)
+        }
+        
+        return true
+      }).toPass({ 
+        timeout: maxWaitTime,
+        intervals: [pollInterval, pollInterval, pollInterval]
+      })
+      
+      console.log('  ✓ Image generation task completed, waiting for UI to update...')
+      await page.waitForTimeout(2000) // Give UI time to sync state
+      
+      // Step 2: Wait for export button to be enabled (all images generated and synced)
+      console.log('  Step 13b: Waiting for export button to be enabled...')
+      await expect(async () => {
+        // Try to trigger a refresh by clicking refresh button if available (helps sync state)
+        const refreshBtn = page.locator('button:has-text("刷新")').first()
+        if (await refreshBtn.isVisible().catch(() => false)) {
+          await refreshBtn.click().catch(() => {}) // Non-blocking refresh
+          await page.waitForTimeout(1000) // Wait for refresh to complete
+        }
+        
+        const exportBtnCheck = page.locator('button:has-text("导出")')
+        const isEnabled = await exportBtnCheck.isEnabled().catch(() => false)
+        
+        // Also verify images are visible
+        const images = page.locator('img[src*="generated"], img[src*="image"], img[src*="/files/"]')
+        const imageCount = await images.count()
+        
+        const elapsed = Math.floor((Date.now() - startTime) / 1000)
+        
+        // Log progress every 5 seconds
+        if (elapsed % 5 === 0 && elapsed > 0) {
+          console.log(`  [${elapsed}s] Export enabled: ${isEnabled}, Images: ${imageCount}/${pageCount}`)
+        }
+        
+        if (!isEnabled) {
+          throw new Error(`Export button not yet enabled (${elapsed}s elapsed, ${imageCount}/${pageCount} images)`)
+        }
+        
+        if (imageCount < pageCount) {
+          throw new Error(`Only ${imageCount}/${pageCount} images found (${elapsed}s elapsed)`)
+        }
+        
+        console.log(`  [${elapsed}s] ✓ Export button enabled and ${imageCount} images found`)
+        return true
+      }).toPass({ 
+        timeout: 60000, // 1 minute for state sync (after task completion)
+        intervals: [2000, 3000, 5000] // Check every 2-5 seconds
+      })
+      
+      // Final verification: export button should be enabled
+      const exportBtnCheck = page.locator('button:has-text("导出")')
+      await expect(exportBtnCheck).toBeEnabled({ timeout: 5000 })
       
       console.log('✓ All images generated\n')
       await page.screenshot({ path: 'test-results/e2e-images-generated.png' })
@@ -344,9 +512,9 @@ test.describe('UI-driven E2E test: From user interface to PPT export', () => {
     }
     
     // ====================================
-    // Step 13: Export PPT
+    // Step 14: Export PPT
     // ====================================
-    console.log('📦 Step 13: Exporting PPT file...')
+    console.log('📦 Step 14: Exporting PPT file...')
     
     // Setup download handler
     const downloadPromise = page.waitForEvent('download', { timeout: 60000 })
