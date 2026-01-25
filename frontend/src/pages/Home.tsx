@@ -540,7 +540,7 @@ export const Home: React.FC = () => {
               className="sm:hidden hover:bg-banana-100/60 hover:shadow-sm hover:scale-105 transition-all duration-200"
               title="素材中心"
             />
-            <Button 
+            {/* <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => navigate('/history')}
@@ -548,7 +548,7 @@ export const Home: React.FC = () => {
             >
               <span className="hidden sm:inline">历史项目</span>
               <span className="sm:hidden">历史</span>
-            </Button>
+            </Button> */}
             <Button
               variant="ghost"
               size="sm"
