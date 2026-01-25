@@ -111,8 +111,9 @@
 <img width="1000" alt="image" src="https://github.com/user-attachments/assets/3e54bbba-88be-4f69-90a1-02e875c25420" />
 <img width="1748" height="538" alt="PPT与PDF导出" src="https://github.com/user-attachments/assets/647eb9b1-d0b6-42cb-a898-378ebe06c984" />
 
-### 5. 可编辑组件pptx导出（Beta迭代中）
-- **智能递归进行组件分析提取、文字提取、表格提取，最终得到可手动编辑的pptx**
+### 5. 可自由编辑的pptx导出（Beta迭代中）
+- **导出图像为高还原度、背景干净的、可自由编辑图像和文字的PPT页面**
+- 相关更新见 https://github.com/Anionex/banana-slides/issues/121
 <img width="1000"  alt="image" src="https://github.com/user-attachments/assets/a85d2d48-1966-4800-a4bf-73d17f914062" />
 
 <br>
@@ -245,13 +246,24 @@ OPENAI_API_BASE=https://api.openai.com/v1
 
 2. **启动服务**
 
+**⚡ 使用预构建镜像**
+
+项目在 Docker Hub 提供了构建好的前端和后端镜像（同步主分支最新版本），可以跳过本地构建步骤，实现快速部署：
+
+```bash
+# 使用预构建镜像启动（无需从头构建）
+docker compose -f docker-compose.prod.yml up -d
+```
+
+镜像名称：
+- `anoinex/banana-slides-frontend:latest`
+- `anoinex/banana-slides-backend:latest`
+
+**从头构建镜像**
+
 ```bash
 docker compose up -d
 ```
-更新：项目也在dockerhub提供了构建好的前端和后端镜像（同步主分支最新版本），名字分别为：
-1. anoinex/banana-slides-frontend
-2. anoinex/banana-slides-backend
-
 
 > [!TIP]
 > 如遇网络问题，可在 `.env` 文件中取消镜像源配置的注释, 再重新运行启动命令：
@@ -361,7 +373,7 @@ OPENAI_API_BASE=https://api.openai.com/v1
 # VERTEX_LOCATION=global
 # GOOGLE_APPLICATION_CREDENTIALS=./gcp-service-account.json
 
-PORT=5000
+BACKEND_PORT=5000
 ...
 ```
 
@@ -527,12 +539,13 @@ banana-slides/
 └── README.md                   # 本文件
 ```
 
+
 ## 交流群
 为了方便大家沟通互助，建此微信交流群.
 
 欢迎提出新功能建议或反馈，本人也会~~佛系~~回答大家问题
 
-<img width="301" alt="image" src="https://github.com/user-attachments/assets/57e6bae0-b127-4e01-8ccf-5669522b0162" />
+<img width="301" alt="image" src="https://github.com/user-attachments/assets/56fb33bb-fab7-4625-a860-ecef09f41817" />
 
 
 
@@ -597,6 +610,22 @@ banana-slides/
 <p>感谢AIHubMix对本项目的赞助</p>
 </div>
 
+
+<div align="center">
+
+
+ <img width="120" alt="image" src="https://github.com/user-attachments/assets/ac2ad6ec-c1cf-4aaa-859c-756b54168c96" />
+
+<details>
+  <summary>感谢<a href="https://api.chatfire.site/login?inviteCode=A15CD6A0">AI火宝</a>对本项目的赞助</summary>
+  “聚合全球多模型API服务商。更低价格享受安全、稳定且72小时链接全球最新模型的服务。”
+</details>
+
+  
+</div>
+
+
+
 ## 致谢
 
 - 项目贡献者们：
@@ -612,7 +641,7 @@ banana-slides/
 <img width="240" alt="image" src="https://github.com/user-attachments/assets/fd7a286d-711b-445e-aecf-43e3fe356473" />
 
 感谢以下朋友对项目的无偿赞助支持：
-> @雅俗共赏、@曹峥、@以年观日、@John、@azazo1、@刘聪NLP、@🍟、@苍何、@biubiu  
+> @雅俗共赏、@曹峥、@以年观日、@John、@胡yun星Ethan, @azazo1、@刘聪NLP、@🍟、@苍何、@biubiu  
 > 如对赞助列表有疑问（如赞赏后没看到您的名字），可<a href="mailto:anionex@qq.com">联系作者</a>
  
 ## 📈 项目统计
