@@ -56,7 +56,7 @@ export const Home: React.FC = () => {
   // 首次访问自动弹出帮助模态框
   useEffect(() => {
     const hasSeenHelp = localStorage.getItem('hasSeenHelpModal');
-    if (!hasSeenHelp) {
+    if (false) {
       // 延迟500ms打开，让页面先渲染完成
       const timer = setTimeout(() => {
         setIsHelpModalOpen(true);
@@ -549,7 +549,7 @@ export const Home: React.FC = () => {
               <span className="hidden sm:inline">历史项目</span>
               <span className="sm:hidden">历史</span>
             </Button>
-            <Button
+            {/* <Button
               variant="ghost"
               size="sm"
               icon={<Settings size={16} className="md:w-[18px] md:h-[18px]" />}
@@ -558,7 +558,7 @@ export const Home: React.FC = () => {
             >
               <span className="hidden md:inline">设置</span>
               <span className="sm:hidden">设</span>
-            </Button>
+            </Button> */}
             <Button
               variant="ghost"
               size="sm"
